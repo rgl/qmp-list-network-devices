@@ -142,7 +142,7 @@ func getNetDevices(qmpMonitor *qmp.SocketMonitor) ([]netDevice, error) {
 }
 
 func getIPAddress(device string, macAddress string) (string, error) {
-	// this parses /proc/net/arp to retrive the given device IP address.
+	// this parses /proc/net/arp to retrieve the given device IP address.
 	//
 	// /proc/net/arp is normally someting alike:
 	//
