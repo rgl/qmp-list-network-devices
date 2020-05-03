@@ -93,47 +93,48 @@ type netDevice struct {
 
 func getNetDevices(qmpMonitor *qmp.SocketMonitor) ([]netDevice, error) {
 	devices := []netDevice{}
-	parentPath := "/machine/peripheral-anon"
-	listResponse, err := qmpQomList(qmpMonitor, parentPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get qmp qom list %v: %w", parentPath, err)
-	}
-	for _, p := range listResponse {
-		if strings.HasPrefix(p.Type, "child<") {
-			path := fmt.Sprintf("%s/%s", parentPath, p.Name)
-			r, err := qmpQomList(qmpMonitor, path)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get qmp qom list %v: %w", path, err)
-			}
-			isNetdev := false
-			for _, d := range r {
-				if d.Name == "netdev" {
-					isNetdev = true
-					break
+	for _, parentPath := range []string{"/machine/peripheral", "/machine/peripheral-anon"} {
+		listResponse, err := qmpQomList(qmpMonitor, parentPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get qmp qom list %v: %w", parentPath, err)
+		}
+		for _, p := range listResponse {
+			if strings.HasPrefix(p.Type, "child<") {
+				path := fmt.Sprintf("%s/%s", parentPath, p.Name)
+				r, err := qmpQomList(qmpMonitor, path)
+				if err != nil {
+					return nil, fmt.Errorf("failed to get qmp qom list %v: %w", path, err)
 				}
-			}
-			if isNetdev {
-				device := netDevice{
-					Path: path,
-				}
+				isNetdev := false
 				for _, d := range r {
-					if d.Name != "type" && d.Name != "netdev" && d.Name != "mac" {
-						continue
-					}
-					value, err := qmpQomGet(qmpMonitor, path, d.Name)
-					if err != nil {
-						return nil, fmt.Errorf("failed to get qmp qom property %v %v: %w", path, d.Name, err)
-					}
-					switch d.Name {
-					case "type":
-						device.Type = value
-					case "netdev":
-						device.Name = value
-					case "mac":
-						device.MacAddress = value
+					if d.Name == "netdev" {
+						isNetdev = true
+						break
 					}
 				}
-				devices = append(devices, device)
+				if isNetdev {
+					device := netDevice{
+						Path: path,
+					}
+					for _, d := range r {
+						if d.Name != "type" && d.Name != "netdev" && d.Name != "mac" {
+							continue
+						}
+						value, err := qmpQomGet(qmpMonitor, path, d.Name)
+						if err != nil {
+							return nil, fmt.Errorf("failed to get qmp qom property %v %v: %w", path, d.Name, err)
+						}
+						switch d.Name {
+						case "type":
+							device.Type = value
+						case "netdev":
+							device.Name = value
+						case "mac":
+							device.MacAddress = value
+						}
+					}
+					devices = append(devices, device)
+				}
 			}
 		}
 	}
@@ -200,7 +201,7 @@ func main() {
 	log.SetFlags(0)
 
 	if len(os.Args) < 2 {
-		log.Fatalf("Usage %s <QMP-ADDRESS>\n", os.Args[0])
+		log.Fatalf("Usage %s <QMP-SOCKET-ADDRESS>\n", os.Args[0])
 	}
 
 	qmpPath, err := homedir.Expand(os.Args[1])
