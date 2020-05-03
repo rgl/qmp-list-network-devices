@@ -43,6 +43,7 @@ net0,vmxnet3,52:54:00:12:34:56,192.168.121.111,/machine/peripheral-anon/device[0
 
 ## References
 
+* [qemu-qmp examples](https://gist.github.com/rgl/dc38c6875a53469fdebb2e9c0a220c6c)
 * https://github.com/qemu/qemu/blob/v4.2.0/qapi/net.json
 * https://github.com/qemu/qemu/blob/v4.2.0/scripts/qmp/qom-tree
 * https://github.com/qemu/qemu/tree/v4.2.0/python/qemu
